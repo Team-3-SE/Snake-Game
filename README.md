@@ -10,7 +10,7 @@ This repository implements the requirements defined in the team's Software Requi
 |---|---|---|---|
 | Krishna | [@prajothgrandhi-creator](https://github.com/prajothgrandhi-creator) | 1 (Introduction), 4 (System Features) | GameController, GameStateManager |
 | Krithika | [@krithika297](https://github.com/krithika297) | 2 (Overall Description), 7 (System Models) | SnakeManager, DifficultyManager, FoodManager |
-| Jaanhavi | [@janhavik777](https://github.com/janhavik777) | 3 (External Interfaces), 8 (RTM) | InputHandler, GameRenderer, tests/ |
+| Jaanhavi | [@jaanhavik777](https://github.com/jaanhavik777) | 3 (External Interfaces), 8 (RTM) | InputHandler, GameRenderer, tests/ |
 | Joey | [@joeyfedrick74-creator](https://github.com/joeyfedrick74-creator) | 5 (Non-Functional Requirements), 6 (Quality Attributes) | CollisionManager, ScoreManager |
 
 Module ownership is also encoded in `.github/CODEOWNERS`, so GitHub automatically requests the right reviewer on any pull request touching a given module.
