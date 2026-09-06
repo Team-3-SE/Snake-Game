@@ -3,7 +3,7 @@
 # More specific rules further down override the general fallback above them.
 
 # Fallback: any file not matched below requests the whole team
-*                           @prajothgrandhi-creator @krithika297 @janhavik777 @joeyfedrick74-creator
+*                           @prajothgrandhi-creator @krithika297 @jaanhavik777 @joeyfedrick74-creator
 
 # Krishna — Game Controller, Game State Manager (session control, start/restart/exit, state transitions)
 src/GameController.*       @prajothgrandhi-creator
@@ -15,13 +15,13 @@ src/DifficultyManager.*    @krithika297
 src/FoodManager.*          @krithika297
 
 # Jaanhavi — Input Handler, Game Renderer, tests/ (interfaces, display, traceability/testing)
-src/InputHandler.*         @janhavik777
-src/GameRenderer.*         @janhavik777
-tests/                     @janhavik777
+src/InputHandler.*         @jaanhavik777
+src/GameRenderer.*         @jaanhavik777
+tests/                     @jaanhavik777
 
 # Joey — Collision Manager, Score Manager (collision detection, scoring, security-adjacent validation)
 src/CollisionManager.*     @joeyfedrick74-creator
 src/ScoreManager.*         @joeyfedrick74-creator
 
 # Docs — shared ownership, anyone can review
-docs/                       @prajothgrandhi-creator @krithika297 @janhavik777 @joeyfedrick74-creator
+docs/                       @prajothgrandhi-creator @krithika297 @jaanhavik777 @joeyfedrick74-creator
