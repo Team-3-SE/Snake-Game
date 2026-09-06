@@ -13,9 +13,7 @@ This repository implements the requirements defined in the team's Software Requi
 | Jaanhavi | 3 (External Interfaces), 8 (RTM) |
 | Joey | 5 (Non-Functional Requirements), 6 (Quality Attributes) |
 
-## Project Decisions (Fixed)
-
-These are locked project decisions and should not be changed without team agreement:
+## Project Decisions
 
 - Grid-based movement, keyboard input only
 - Score: +10 per food item
