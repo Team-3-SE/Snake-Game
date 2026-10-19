@@ -77,5 +77,18 @@ int main()
     assert(unknown == InputCommand::None);
     assert(snake.getDirection() == Direction::Up);
 
+    // Verify control-key mappings.
+    assert(InputHandler::parseInput(InputKey::P) ==
+       InputCommand::Pause);
+    assert(InputHandler::parseInput(InputKey::R) ==
+       InputCommand::Restart);
+    assert(InputHandler::parseInput(InputKey::Escape) ==
+       InputCommand::Exit);
+
+    // Verify console control-key mappings.
+    assert(InputHandler::parseInput('p') == InputCommand::Pause);
+    assert(InputHandler::parseInput('r') == InputCommand::Restart);
+    assert(InputHandler::parseInput(static_cast<char>(27)) == InputCommand::Exit);
+    
     return 0;
 }
