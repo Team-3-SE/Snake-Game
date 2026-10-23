@@ -5,14 +5,18 @@ int main()
 {
     SnakeManager snake;
 
-    // Initial snake has 3 segments
     assert(snake.getBody().size() == 3);
 
-    // Grow the snake
+    Position originalTail = snake.getBody().back();
+
     snake.grow();
 
-    // Snake should now have 4 segments
     assert(snake.getBody().size() == 4);
+
+    Position newTail = snake.getBody().back();
+
+    assert(newTail.x == originalTail.x);
+    assert(newTail.y == originalTail.y);
 
     return 0;
 }
