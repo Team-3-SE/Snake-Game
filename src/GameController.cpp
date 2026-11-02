@@ -1,4 +1,5 @@
 
+#include "DifficultyManager.h"
 #include "GameController.h"
 #include "FoodManager.h"
 #include "GameRenderer.h"
@@ -17,9 +18,6 @@ namespace
     constexpr int BOARD_WIDTH = 20;
     constexpr int BOARD_HEIGHT = 15;
     constexpr int POINTS_PER_FOOD = 10;
-    constexpr int INITIAL_TICK_MS = 180;
-    constexpr int MINIMUM_TICK_MS = 70;
-    constexpr int SPEEDUP_PER_FOOD_MS = 10;
 
     bool samePosition(Position a, Position b)
     {
@@ -266,13 +264,7 @@ void GameController::run()
             continue;
 
         const auto now = std::chrono::steady_clock::now();
-        const int reduction =
-            (score / POINTS_PER_FOOD) * SPEEDUP_PER_FOOD_MS;
-
-        const int interval =
-            (INITIAL_TICK_MS - reduction < MINIMUM_TICK_MS)
-                ? MINIMUM_TICK_MS
-                : INITIAL_TICK_MS - reduction;
+        const int interval = DifficultyManager::getTickInterval(score);
 
         const auto elapsed =
             std::chrono::duration_cast<std::chrono::milliseconds>(
