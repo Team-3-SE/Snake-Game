@@ -89,6 +89,5 @@ int main()
     assert(InputHandler::parseInput('p') == InputCommand::Pause);
     assert(InputHandler::parseInput('r') == InputCommand::Restart);
     assert(InputHandler::parseInput(static_cast<char>(27)) == InputCommand::Exit);
-    
     return 0;
 }
