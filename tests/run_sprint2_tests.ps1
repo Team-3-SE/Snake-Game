@@ -1,16 +1,14 @@
-
 $ErrorActionPreference = "Stop"
 
-# Find the project root from this script's location.
+# Locate project root.
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
-# Keep generated executables inside the ignored build directory.
+# Store generated executables in the ignored build directory.
 $BuildDir = Join-Path $RepoRoot "build\sprint2-tests"
 
 New-Item -ItemType Directory -Force -Path $BuildDir |
     Out-Null
 
-# Verify that the C++ compiler is available.
 if (-not (Get-Command g++ -ErrorAction SilentlyContinue)) {
     Write-Host "ERROR: g++ was not found in PATH." -ForegroundColor Red
     exit 1
@@ -21,10 +19,10 @@ Write-Host "       SPRINT 2 TEST RUNNER"
 Write-Host "=====================================`n"
 
 $passed = 0
-$total = 4
+$total = 5
 
 try {
-    # 1. Build the complete console application.
+    # Build the complete console application.
     Write-Host "[BUILD] Full console application"
 
     $mainSources = @(
@@ -53,10 +51,17 @@ try {
     Write-Host "[PASS] Main application build" -ForegroundColor Green
     $passed++
 
-    # Define the three Sprint 2 tests and their dependencies.
+    # Sprint 2 automated test definitions.
     $tests = @(
         [PSCustomObject]@{
             Name = "TC_PAUSE_01"
+            Sources = @(
+                "src\GameStateManager.cpp"
+            )
+        }
+
+        [PSCustomObject]@{
+            Name = "TC_PAUSE_02"
             Sources = @(
                 "src\GameStateManager.cpp"
             )
