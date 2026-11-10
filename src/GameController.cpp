@@ -201,7 +201,10 @@ void GameController::run()
             int key = _getch();
 
             if (key == 27)
+            {
+                stateManager.setState(GameState::Exiting);
                 running = false;
+            }
             else if (key == 'r' || key == 'R')
             {
                 snake = SnakeManager();
