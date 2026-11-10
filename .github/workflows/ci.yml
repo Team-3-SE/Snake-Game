@@ -50,7 +50,9 @@ jobs:
         run: |
           $env:Path = "$env:MSYS2_LOCATION\ucrt64\bin;$env:Path"
           g++ --version
+
           & .\tests\run_sprint2_tests.ps1
+
           if ($LASTEXITCODE -ne 0) {
               throw "Sprint 2 tests failed."
           }
@@ -71,7 +73,6 @@ jobs:
             --object-directory "build/sprint2-tests/coverage-data" `
             --gcov-executable "$env:MSYS2_LOCATION\ucrt64\bin\gcov.exe" `
             --filter "src/" `
-            --branches `
             --txt-summary `
             --html-details "build/sprint2-tests/coverage-report/index.html"
 
