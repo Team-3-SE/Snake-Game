@@ -1,3 +1,4 @@
+
 #include "../src/GameStateManager.h"
 #include "../src/SnakeManager.h"
 #include "../src/FoodManager.h"
@@ -15,6 +16,7 @@ int main()
 
     // Simulate a previous game with modified values.
     SnakeManager snake;
+
     snake.setDirection(Direction::Up);
     snake.move();
     snake.grow();
@@ -24,7 +26,7 @@ int main()
 
     int score = 50;
 
-    // Verify that the previous game is not in its initial condition.
+    // Verify the previous game has different values.
     assert(snake.getDirection() == Direction::Up);
     assert(snake.getBody().size() == 4);
     assert(score == 50);
@@ -40,19 +42,27 @@ int main()
     // Return the game to Playing state.
     assert(state.setState(GameState::Playing));
 
-    // Verify the snake has returned to its initial configuration.
+    // Verify the initial snake length and direction.
     assert(snake.getBody().size() == 3);
     assert(snake.getDirection() == Direction::Right);
 
+    // Verify the initial snake head position.
     Position head = snake.getHead();
     assert(head.x == 5);
     assert(head.y == 5);
+
+    // Verify every snake segment has its exact initial position.
+    const auto& body = snake.getBody();
+
+    assert(body[0].x == 5 && body[0].y == 5);
+    assert(body[1].x == 4 && body[1].y == 5);
+    assert(body[2].x == 3 && body[2].y == 5);
 
     // Verify score and speed have reset.
     assert(score == 0);
     assert(DifficultyManager::getTickInterval(score) == 180);
 
-    // Verify the regenerated food is inside the board.
+    // Verify regenerated food is inside the board.
     Position p = food.getFood();
 
     assert(p.x >= 0 && p.x < 20);
@@ -64,6 +74,7 @@ int main()
         assert(p.x != segment.x || p.y != segment.y);
     }
 
+    // Verify the final game state.
     assert(state.getState() == GameState::Playing);
 
     return 0;
