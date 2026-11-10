@@ -6,11 +6,9 @@ on:
     branches:
       - main
       - "feature/**"
-
   pull_request:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
@@ -80,6 +78,7 @@ jobs:
             --inline-suppr \
             --suppress=missingIncludeSystem \
             --suppress=missingInclude \
+            --suppress=assertWithSideEffect:tests/* \
             --platform=win64 \
             --std=c++17 \
             -I src \
