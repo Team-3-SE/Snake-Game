@@ -227,7 +227,10 @@ void GameController::run()
             int key = _getch();
 
             if (key == 27)
+            {
+                stateManager.setState(GameState::Exiting);
                 running = false;
+            }
             else if (key == 'p' || key == 'P')
             {
                 stateManager.setState(GameState::Playing);
