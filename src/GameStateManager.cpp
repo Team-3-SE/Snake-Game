@@ -1,4 +1,3 @@
-
 #include "GameStateManager.h"
 
 GameStateManager::GameStateManager()
@@ -9,6 +8,12 @@ GameStateManager::GameStateManager()
 GameState GameStateManager::getState() const
 {
     return currentState;
+}
+
+// SG-F-013: Check whether gameplay updates are allowed.
+bool GameStateManager::isGameplayActive() const
+{
+    return currentState == GameState::Playing;
 }
 
 bool GameStateManager::setState(GameState newState)
