@@ -11,66 +11,54 @@ GameState GameStateManager::getState() const
     return currentState;
 }
 
-// SG-F-013: Check whether gameplay updates are allowed.
 bool GameStateManager::isGameplayActive() const
 {
     return currentState == GameState::Playing;
 }
 
-bool GameStateManager::setState(GameState newState)
+// Checks valid transitions without modifying the current state.
+bool GameStateManager::canTransitionTo(GameState newState) const
 {
-    // Exiting is a terminal state.
-    // No further state transitions are allowed after exit.
     if (currentState == GameState::Exiting)
     {
         return false;
     }
 
-    // SG-F-015: Allow exit from any active game state.
+    // Exit is allowed from every non-terminal state.
     if (newState == GameState::Exiting)
     {
-        currentState = GameState::Exiting;
         return true;
     }
 
     switch (currentState)
     {
         case GameState::Menu:
-            if (newState == GameState::Playing)
-            {
-                currentState = newState;
-                return true;
-            }
-            break;
+            return newState == GameState::Playing;
 
         case GameState::Playing:
-            if (newState == GameState::Paused ||
-                newState == GameState::GameOver)
-            {
-                currentState = newState;
-                return true;
-            }
-            break;
+            return newState == GameState::Paused ||
+                   newState == GameState::GameOver;
 
         case GameState::Paused:
-            if (newState == GameState::Playing)
-            {
-                currentState = newState;
-                return true;
-            }
-            break;
+            return newState == GameState::Playing;
 
         case GameState::GameOver:
-            if (newState == GameState::Playing)
-            {
-                currentState = newState;
-                return true;
-            }
-            break;
+            return newState == GameState::Playing;
 
         case GameState::Exiting:
-            break;
+            return false;
     }
 
     return false;
+}
+
+bool GameStateManager::setState(GameState newState)
+{
+    if (!canTransitionTo(newState))
+    {
+        return false;
+    }
+
+    currentState = newState;
+    return true;
 }
