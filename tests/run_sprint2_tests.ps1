@@ -1,13 +1,12 @@
+
 $ErrorActionPreference = "Stop"
 
-# Locate project root.
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-
-# Store generated executables in the ignored build directory.
 $BuildDir = Join-Path $RepoRoot "build\sprint2-tests"
+$CoverageDataDir = Join-Path $BuildDir "coverage-data"
 
-New-Item -ItemType Directory -Force -Path $BuildDir |
-    Out-Null
+New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
+New-Item -ItemType Directory -Force -Path $CoverageDataDir | Out-Null
 
 if (-not (Get-Command g++ -ErrorAction SilentlyContinue)) {
     Write-Host "ERROR: g++ was not found in PATH." -ForegroundColor Red
@@ -55,16 +54,12 @@ try {
     $tests = @(
         [PSCustomObject]@{
             Name = "TC_PAUSE_01"
-            Sources = @(
-                "src\GameStateManager.cpp"
-            )
+            Sources = @("src\GameStateManager.cpp")
         }
 
         [PSCustomObject]@{
             Name = "TC_PAUSE_02"
-            Sources = @(
-                "src\GameStateManager.cpp"
-            )
+            Sources = @("src\GameStateManager.cpp")
         }
 
         [PSCustomObject]@{
@@ -95,7 +90,11 @@ try {
             throw "Test source not found: $testSource"
         }
 
-        $exePath = Join-Path $BuildDir "$($test.Name).exe"
+        # Keep each test's coverage files separate.
+        $testBuildDir = Join-Path $CoverageDataDir $test.Name
+        New-Item -ItemType Directory -Force -Path $testBuildDir | Out-Null
+
+        $exePath = Join-Path $testBuildDir "$($test.Name).exe"
 
         $dependencyPaths = @(
             $test.Sources |
@@ -106,20 +105,29 @@ try {
             "-std=c++17",
             "-Wall",
             "-Wextra",
-            "-pedantic"
+            "-pedantic",
+            "-O0",
+            "-g",
+            "--coverage"
         ) + @($testSource) + $dependencyPaths +
             @("-o", $exePath)
 
-        & g++ @compileArgs
+        Push-Location $testBuildDir
+        try {
+            & g++ @compileArgs
 
-        if ($LASTEXITCODE -ne 0) {
-            throw "$($test.Name) compilation failed."
+            if ($LASTEXITCODE -ne 0) {
+                throw "$($test.Name) compilation failed."
+            }
+
+            & $exePath
+
+            if ($LASTEXITCODE -ne 0) {
+                throw "$($test.Name) execution failed."
+            }
         }
-
-        & $exePath
-
-        if ($LASTEXITCODE -ne 0) {
-            throw "$($test.Name) execution failed."
+        finally {
+            Pop-Location
         }
 
         Write-Host "[PASS] $($test.Name)" -ForegroundColor Green
