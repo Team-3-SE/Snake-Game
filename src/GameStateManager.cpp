@@ -1,3 +1,4 @@
+
 #include "GameStateManager.h"
 
 GameStateManager::GameStateManager()
@@ -18,6 +19,20 @@ bool GameStateManager::isGameplayActive() const
 
 bool GameStateManager::setState(GameState newState)
 {
+    // Exiting is a terminal state.
+    // No further state transitions are allowed after exit.
+    if (currentState == GameState::Exiting)
+    {
+        return false;
+    }
+
+    // SG-F-015: Allow exit from any active game state.
+    if (newState == GameState::Exiting)
+    {
+        currentState = GameState::Exiting;
+        return true;
+    }
+
     switch (currentState)
     {
         case GameState::Menu:
@@ -51,6 +66,9 @@ bool GameStateManager::setState(GameState newState)
                 currentState = newState;
                 return true;
             }
+            break;
+
+        case GameState::Exiting:
             break;
     }
 

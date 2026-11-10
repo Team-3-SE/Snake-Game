@@ -1,3 +1,4 @@
+
 #ifndef GAME_STATE_MANAGER_H
 #define GAME_STATE_MANAGER_H
 
@@ -6,7 +7,8 @@ enum class GameState
     Menu,
     Playing,
     Paused,
-    GameOver
+    GameOver,
+    Exiting
 };
 
 class GameStateManager
