@@ -260,7 +260,7 @@ void GameController::run()
         if (!running)
             break;
 
-        if (stateManager.getState() != GameState::Playing)
+        if (!stateManager.isGameplayActive())
             continue;
 
         const auto now = std::chrono::steady_clock::now();
