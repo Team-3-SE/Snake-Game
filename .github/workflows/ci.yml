@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build-and-test:
-    name: Windows Build and Automated Tests
+    name: Windows Build, Tests and Coverage
     runs-on: windows-latest
     timeout-minutes: 20
 
@@ -35,6 +35,14 @@ jobs:
           update: true
           install: mingw-w64-ucrt-x86_64-gcc
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install gcovr
+        run: python -m pip install gcovr
+
       - name: Build and run automated tests
         shell: pwsh
         env:
@@ -42,9 +50,48 @@ jobs:
         run: |
           $env:Path = "$env:MSYS2_LOCATION\ucrt64\bin;$env:Path"
           g++ --version
+
           & .\tests\run_sprint2_tests.ps1
+
           if ($LASTEXITCODE -ne 0) {
               throw "Sprint 2 tests failed."
+          }
+
+      - name: Generate line and branch coverage report
+        if: success()
+        shell: pwsh
+        env:
+          MSYS2_LOCATION: ${{ steps.msys2.outputs.msys2-location }}
+        run: |
+          $env:Path = "$env:MSYS2_LOCATION\ucrt64\bin;$env:Path"
+
+          Write-Host "Checking GCC coverage tools..."
+
+          $gcovPath = Join-Path $env:MSYS2_LOCATION "ucrt64\bin\gcov.exe"
+
+          if (-not (Test-Path $gcovPath)) {
+              throw "gcov.exe was not found at $gcovPath"
+          }
+
+          & $gcovPath --version
+
+          if ($LASTEXITCODE -ne 0) {
+              throw "GCOV is not working."
+          }
+
+          New-Item -ItemType Directory -Force `
+            -Path "build/sprint2-tests/coverage-report" | Out-Null
+
+          python -m gcovr `
+            --root "." `
+            --object-directory "build/sprint2-tests/coverage-data" `
+            --gcov-executable "gcov" `
+            --filter "src/" `
+            --txt-summary `
+            --html-details "build/sprint2-tests/coverage-report/index.html"
+
+          if ($LASTEXITCODE -ne 0) {
+              throw "Coverage report generation failed."
           }
 
       - name: Upload Windows executable
@@ -54,6 +101,15 @@ jobs:
           name: snake-game-console-windows
           path: build/sprint2-tests/snake_game_console.exe
           if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: code-and-branch-coverage-report
+          path: build/sprint2-tests/coverage-report/
+          if-no-files-found: warn
           retention-days: 7
 
   cpp-lint:
