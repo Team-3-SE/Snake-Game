@@ -85,7 +85,7 @@ jobs:
           python -m gcovr `
             --root "." `
             --object-directory "build/sprint2-tests/coverage-data" `
-            --gcov-executable "$gcovPath" `
+            --gcov-executable "gcov" `
             --filter "src/" `
             --txt-summary `
             --html-details "build/sprint2-tests/coverage-report/index.html"
