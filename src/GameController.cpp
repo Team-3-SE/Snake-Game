@@ -252,6 +252,7 @@ void GameController::run()
 
             if (command == InputCommand::Exit)
             {
+                stateManager.setState(GameState::Exiting);
                 running = false;
                 break;
             }
