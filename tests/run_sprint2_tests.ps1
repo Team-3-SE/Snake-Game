@@ -19,7 +19,7 @@ Write-Host "       SPRINT 2 TEST RUNNER"
 Write-Host "=====================================`n"
 
 $passed = 0
-$total = 5
+$total = 7
 
 try {
     # Build the complete console application.
@@ -82,6 +82,20 @@ try {
             Sources = @(
                 "src\InputHandler.cpp",
                 "src\SnakeManager.cpp"
+            )
+        }
+
+        [PSCustomObject]@{
+            Name = "TC_STATE_EXIT_01"
+            Sources = @(
+                "src\GameStateManager.cpp"
+            )
+        }
+
+        [PSCustomObject]@{
+            Name = "TC_STATE_TRANSITION_01"
+            Sources = @(
+                "src\GameStateManager.cpp"
             )
         }
     )
