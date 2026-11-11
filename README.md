@@ -87,3 +87,51 @@ Test file names follow the SRS's naming convention, `TC-[FUNCTION]-[NUMBER]`, so
 These do not need to be individual C++ classes if a simpler structure is more practical:
 
 Game Controller · Input Handler · Snake Manager · Food Manager · Collision Manager · Score Manager · Game Renderer · Game State Manager · Difficulty Manager
+
+## Game State Lifecycle
+
+The GameStateManager controls the lifecycle of the Snake Game and validates state transitions.
+
+### Available States
+
+| State | Description |
+|---|---|
+| Menu | Initial state displayed when the game starts. |
+| Playing | Active gameplay; snake movement and updates are enabled. |
+| Paused | Gameplay updates are suspended until resumed. |
+| GameOver | Displayed when a game-ending condition occurs. |
+| Exiting | Terminal state indicating that the player has requested to exit. |
+
+### Valid State Transitions
+
+- Menu -> Playing: Player starts the game.
+- Playing -> Paused: Player presses P.
+- Paused -> Playing: Player resumes using P.
+- Playing -> GameOver: A game-ending condition occurs.
+- GameOver -> Playing: Player restarts using R.
+- Any non-exiting state -> Exiting: Player presses Escape.
+
+The Exiting state is terminal. No further transitions are accepted after entering it.
+
+### Gameplay and Exit Handling
+
+The isGameplayActive() method returns true only when the current state is Playing.
+
+GameController uses GameStateManager as the single source of truth for controlling the game loop. The loop terminates when the state becomes Exiting, without requiring a separate running Boolean.
+
+Escape is handled through the state manager from the main menu, active gameplay, pause screen, and Game Over screen.
+
+### State Management Tests
+
+| Test | Purpose |
+|---|---|
+| TC_PAUSE_01 | Pause, resume, and active gameplay state. |
+| TC_PAUSE_02 | Invalid state transitions. |
+| TC_RESTART_01 | Game restart behaviour. |
+| TC_EXIT_01 | Escape key input mapping. |
+| TC_STATE_EXIT_01 | Exit from all non-terminal states and terminal-state behaviour. |
+| TC_STATE_TRANSITION_01 | Transition validation without modifying the current state. |
+
+Run the Sprint 2 build and automated tests on Windows using:
+
+    .\tests\run_sprint2_tests.ps1

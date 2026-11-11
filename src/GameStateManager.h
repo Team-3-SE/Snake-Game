@@ -1,3 +1,4 @@
+
 #ifndef GAME_STATE_MANAGER_H
 #define GAME_STATE_MANAGER_H
 
@@ -6,7 +7,8 @@ enum class GameState
     Menu,
     Playing,
     Paused,
-    GameOver
+    GameOver,
+    Exiting
 };
 
 class GameStateManager
@@ -22,6 +24,9 @@ public:
 
     // SG-F-013: Returns true only when gameplay updates are allowed.
     bool isGameplayActive() const;
+
+    // Checks whether a state transition is allowed without modifying state.
+    bool canTransitionTo(GameState newState) const;
 
     // Changes the current game state if the transition is valid.
     bool setState(GameState newState);
