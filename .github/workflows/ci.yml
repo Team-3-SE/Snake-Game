@@ -21,9 +21,6 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Configure Git line endings
-        run: git config --global core.autocrlf input
-
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -41,7 +38,9 @@ jobs:
           python-version: "3.x"
 
       - name: Install gcovr
-        run: python -m pip install gcovr
+        shell: pwsh
+        run: |
+          python -m pip install gcovr
 
       - name: Build and run automated tests
         shell: pwsh
@@ -49,12 +48,20 @@ jobs:
           MSYS2_LOCATION: ${{ steps.msys2.outputs.msys2-location }}
         run: |
           $env:Path = "$env:MSYS2_LOCATION\ucrt64\bin;$env:Path"
+
+          Write-Host "Checking GCC..."
           g++ --version
+
+          if ($LASTEXITCODE -ne 0) {
+              throw "GCC is not working."
+          }
+
+          Write-Host "Running automated tests..."
 
           & .\tests\run_sprint2_tests.ps1
 
           if ($LASTEXITCODE -ne 0) {
-              throw "Sprint 2 tests failed."
+              throw "Automated tests failed."
           }
 
       - name: Generate line and branch coverage report
@@ -65,53 +72,72 @@ jobs:
         run: |
           $env:Path = "$env:MSYS2_LOCATION\ucrt64\bin;$env:Path"
 
-          Write-Host "Checking GCC coverage tools..."
+          Write-Host "========== COVERAGE DIAGNOSTICS =========="
+
+          Write-Host "Current directory:"
+          Get-Location
+
+          $projectPath = $env:GITHUB_WORKSPACE
+          $coverageDataPath = Join-Path $projectPath "build\all-tests\coverage-data"
+          $coverageReportPath = Join-Path $projectPath "build\all-tests\coverage-report"
+
+          Write-Host "Project path: $projectPath"
+          Write-Host "Coverage data path: $coverageDataPath"
+
+          if (-not (Test-Path -LiteralPath $coverageDataPath -PathType Container)) {
+              Write-Host "Build directory contents:"
+              Get-ChildItem (Join-Path $projectPath "build") -Recurse -ErrorAction SilentlyContinue
+              throw "Coverage data directory does not exist."
+          }
+
+          Write-Host "Coverage data directory exists."
+
+          $gcdaFiles = @(Get-ChildItem -LiteralPath $coverageDataPath -Recurse -Filter "*.gcda")
+          $gcnoFiles = @(Get-ChildItem -LiteralPath $coverageDataPath -Recurse -Filter "*.gcno")
+
+          Write-Host "GCDA files found: $($gcdaFiles.Count)"
+          Write-Host "GCNO files found: $($gcnoFiles.Count)"
+
+          if ($gcdaFiles.Count -eq 0) {
+              throw "No GCDA coverage files were generated."
+          }
+
+          if ($gcnoFiles.Count -eq 0) {
+              throw "No GCNO coverage files were generated."
+          }
+
+          New-Item -ItemType Directory -Force -Path $coverageReportPath | Out-Null
 
           $gcovPath = Join-Path $env:MSYS2_LOCATION "ucrt64\bin\gcov.exe"
 
-          if (-not (Test-Path $gcovPath)) {
-              throw "gcov.exe was not found at $gcovPath"
-          }
-
+          Write-Host "Checking GCOV..."
           & $gcovPath --version
 
           if ($LASTEXITCODE -ne 0) {
               throw "GCOV is not working."
           }
 
-          $coverageDataPath = Join-Path $PWD "build\all-tests\coverage-data"
-          $coverageReportPath = Join-Path $PWD "build\all-tests\coverage-report"
+          Write-Host "Checking gcovr..."
+          python -m gcovr --version
 
-          Write-Host "Coverage data path: $coverageDataPath"
-          Write-Host "Coverage report path: $coverageReportPath"
-
-          if (-not (Test-Path -LiteralPath $coverageDataPath -PathType Container)) {
-              throw "Coverage data directory does not exist: $coverageDataPath"
+          if ($LASTEXITCODE -ne 0) {
+              throw "gcovr is not installed correctly."
           }
 
-          Write-Host "Checking generated coverage files..."
-
-          $gcdaFiles = @(Get-ChildItem $coverageDataPath -Recurse -Filter "*.gcda")
-
-          Write-Host "GCDA files found: $($gcdaFiles.Count)"
-
-          if ($gcdaFiles.Count -eq 0) {
-              throw "No GCDA coverage files were generated."
-          }
-
-          New-Item -ItemType Directory -Force -Path $coverageReportPath | Out-Null
+          Write-Host "Generating coverage report..."
 
           python -m gcovr `
-            --root "$PWD" `
-            --object-directory "$coverageDataPath" `
+            --root "$projectPath" `
             --gcov-executable "$gcovPath" `
-            --filter "src/" `
+            --filter "$projectPath/src/" `
             --txt-summary `
             --html-details "$coverageReportPath/index.html"
 
           if ($LASTEXITCODE -ne 0) {
               throw "Coverage report generation failed."
           }
+
+          Write-Host "Coverage report generated successfully."
 
       - name: Upload Windows executable
         if: success()
