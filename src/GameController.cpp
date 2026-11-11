@@ -1,7 +1,6 @@
 
-#include "DifficultyManager.h"
 #include "GameController.h"
-#include "FoodManager.h"
+#include "GameSession.h"
 #include "GameRenderer.h"
 #include "InputHandler.h"
 #include "SnakeManager.h"
@@ -17,50 +16,10 @@ namespace
 {
     constexpr int BOARD_WIDTH = 20;
     constexpr int BOARD_HEIGHT = 15;
-    constexpr int POINTS_PER_FOOD = 10;
 
-    bool samePosition(Position a, Position b)
+    bool sameCell(Position a, Position b)
     {
         return a.x == b.x && a.y == b.y;
-    }
-
-    bool outsideBoard(Position p)
-    {
-        return p.x < 0 || p.x >= BOARD_WIDTH ||
-               p.y < 0 || p.y >= BOARD_HEIGHT;
-    }
-
-    bool hitsBody(const SnakeManager& snake)
-    {
-        const auto& body = snake.getBody();
-        const Position head = snake.getHead();
-
-        for (std::size_t i = 1; i < body.size(); ++i)
-        {
-            if (samePosition(body[i], head))
-                return true;
-        }
-        return false;
-    }
-
-    bool isMove(InputCommand command)
-    {
-        return command == InputCommand::MoveUp ||
-               command == InputCommand::MoveDown ||
-               command == InputCommand::MoveLeft ||
-               command == InputCommand::MoveRight;
-    }
-
-    Direction toDirection(InputCommand command)
-    {
-        switch (command)
-        {
-            case InputCommand::MoveUp:    return Direction::Up;
-            case InputCommand::MoveDown:  return Direction::Down;
-            case InputCommand::MoveLeft:  return Direction::Left;
-            case InputCommand::MoveRight: return Direction::Right;
-            default:                      return Direction::Right;
-        }
     }
 
     RenderGameState toRenderState(GameState state)
@@ -71,6 +30,7 @@ namespace
             case GameState::Playing:  return RenderGameState::Playing;
             case GameState::Paused:   return RenderGameState::Paused;
             case GameState::GameOver: return RenderGameState::GameOver;
+            case GameState::Exiting: break;
         }
         return RenderGameState::Menu;
     }
@@ -90,20 +50,20 @@ namespace
                 Position cell{x, y};
                 char symbol = ' ';
 
-                if (samePosition(cell, snake.getHead()))
+                if (sameCell(cell, snake.getHead()))
                     symbol = 'O';
                 else
                 {
                     for (const Position& segment : snake.getBody())
                     {
-                        if (samePosition(cell, segment))
+                        if (sameCell(cell, segment))
                         {
                             symbol = 'o';
                             break;
                         }
                     }
 
-                    if (samePosition(cell, food))
+                    if (sameCell(cell, food))
                         symbol = '*';
                 }
 
@@ -119,9 +79,8 @@ namespace
         std::cout << "Arrow keys/WASD: Move | P: Pause | Esc: Exit\n";
     }
 
-    InputCommand readArrowOrKey()
+    InputCommand readCommand(int key)
     {
-        int key = _getch();
 
         if (key == 0 || key == 224)
         {
@@ -138,166 +97,82 @@ namespace
         return InputHandler::parseInput(static_cast<char>(key));
     }
 
-    void showScreen(const SnakeManager& snake, Position food,
-                    GameState state, int score)
+    void showScreen(const GameSession& session)
     {
         system("cls");
-        GameRenderer::renderConsole(toRenderState(state), score);
-
-        if (state == GameState::Playing || state == GameState::Paused)
-            drawBoard(snake, food);
+        GameRenderer::renderConsole(RenderGameState::Playing,
+                                    session.getScore());
+        drawBoard(session.getSnake(), session.getFood());
     }
 }
 
-GameController::GameController()
-    : running(true)
-{
-}
+GameController::GameController() = default;
 
 void GameController::run()
 {
-    SnakeManager snake;
-    FoodManager food(BOARD_WIDTH, BOARD_HEIGHT);
-    int score = 0;
-
-    food.generateFood(snake.getBody());
+    GameSession session(BOARD_WIDTH, BOARD_HEIGHT);
 
     auto lastTick = std::chrono::steady_clock::now();
-    bool firstFrame = true;
+    bool needsRedraw = true;
+    GameState shown = session.getState();
 
-    while (running)
+    while (session.getState() != GameState::Exiting)
     {
-        GameState state = stateManager.getState();
+        const GameState state = session.getState();
 
-        if (state == GameState::Menu)
+        if (state != shown)
         {
-            system("cls");
-            GameRenderer::renderConsole(RenderGameState::Menu, score);
-            std::cout << "\nPress ENTER to start or ESC to exit.\n";
+            shown = state;
+            lastTick = std::chrono::steady_clock::now();
+            needsRedraw = true;
+        }
 
-            int key = _getch();
-
-            if (key == 27)
-                running = false;
-            else if (key == 13)
+        if (state != GameState::Playing)
+        {
+            if (needsRedraw)
             {
-                stateManager.setState(GameState::Playing);
-                lastTick = std::chrono::steady_clock::now();
-                firstFrame = true;
+                system("cls");
+                GameRenderer::renderConsole(toRenderState(state),
+                                            session.getScore());
+                if (state == GameState::Menu)
+                    std::cout << "\nPress ENTER to start or ESC to exit.\n";
+                else if (state == GameState::Paused)
+                    std::cout << "\nPAUSED - Press P to resume or ESC to exit.\n";
+                else
+                    std::cout << "\nFinal score: " << session.getScore()
+                              << "\nPress R to restart or ESC to exit.\n";
+                needsRedraw = false;
             }
+
+            const int key = _getch();
+            if (state == GameState::Menu && key == 13)
+                session.start();
+            else
+                session.handle(readCommand(key));
             continue;
         }
 
-        if (state == GameState::GameOver)
+        if (needsRedraw)
         {
-            system("cls");
-            GameRenderer::renderConsole(RenderGameState::GameOver, score);
-            std::cout << "\nFinal score: " << score
-                      << "\nPress R to restart or ESC to exit.\n";
+            showScreen(session);
+            needsRedraw = false;
+        }
 
-            int key = _getch();
+        while (_kbhit() && session.getState() == GameState::Playing)
+            session.handle(readCommand(_getch()));
 
-            if (key == 27)
-                running = false;
-            else if (key == 'r' || key == 'R')
-            {
-                snake = SnakeManager();
-                food = FoodManager(BOARD_WIDTH, BOARD_HEIGHT);
-                score = 0;
-                food.generateFood(snake.getBody());
-                stateManager.setState(GameState::Playing);
-                lastTick = std::chrono::steady_clock::now();
-                firstFrame = true;
-            }
+        if (session.getState() != GameState::Playing)
             continue;
-        }
-
-        if (state == GameState::Paused)
-        {
-            system("cls");
-            GameRenderer::renderConsole(RenderGameState::Paused, score);
-            std::cout << "\nPAUSED - Press P to resume or ESC to exit.\n";
-
-            int key = _getch();
-
-            if (key == 27)
-                running = false;
-            else if (key == 'p' || key == 'P')
-            {
-                stateManager.setState(GameState::Playing);
-                lastTick = std::chrono::steady_clock::now();
-                firstFrame = true;
-            }
-            continue;
-        }
-
-        if (firstFrame)
-        {
-            showScreen(snake, food.getFood(), GameState::Playing, score);
-            firstFrame = false;
-        }
-
-        while (_kbhit())
-        {
-            InputCommand command = readArrowOrKey();
-
-            if (command == InputCommand::Exit)
-            {
-                running = false;
-                break;
-            }
-
-            if (command == InputCommand::Pause)
-            {
-                stateManager.setState(GameState::Paused);
-                break;
-            }
-
-            if (isMove(command))
-                InputHandler::applyDirection(snake, toDirection(command));
-        }
-
-        if (!running)
-            break;
-
-        if (stateManager.getState() != GameState::Playing)
-            continue;
-
-        const auto now = std::chrono::steady_clock::now();
-        const int interval = DifficultyManager::getTickInterval(score);
 
         const auto elapsed =
             std::chrono::duration_cast<std::chrono::milliseconds>(
-                now - lastTick).count();
+                std::chrono::steady_clock::now() - lastTick).count();
 
-        if (elapsed >= interval)
+        if (elapsed >= session.getTickInterval())
         {
-            lastTick = now;
-            snake.move();
-
-            if (outsideBoard(snake.getHead()) || hitsBody(snake))
-            {
-                stateManager.setState(GameState::GameOver);
-                continue;
-            }
-
-            if (samePosition(snake.getHead(), food.getFood()))
-            {
-                snake.grow();
-                score += POINTS_PER_FOOD;
-
-                try
-                {
-                    food.generateFood(snake.getBody());
-                }
-                catch (const std::runtime_error&)
-                {
-                    stateManager.setState(GameState::GameOver);
-                    continue;
-                }
-            }
-
-            showScreen(snake, food.getFood(), GameState::Playing, score);
+            lastTick = std::chrono::steady_clock::now();
+            session.tick();
+            needsRedraw = true;
         }
 
         Sleep(5);

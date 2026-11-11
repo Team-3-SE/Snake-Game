@@ -60,7 +60,10 @@ bool InputHandler::applyDirection(
     SnakeManager& snake,
     Direction requestedDirection)
 {
-    if (!isValidDirection(snake.getDirection(), requestedDirection))
+    // Reject reversal of the pending direction and of the direction the snake
+    // last moved in, so two turns inside one tick cannot reverse into the body.
+    if (!isValidDirection(snake.getDirection(), requestedDirection) ||
+        !isValidDirection(snake.getMovedDirection(), requestedDirection))
         return false;
 
     snake.setDirection(requestedDirection);

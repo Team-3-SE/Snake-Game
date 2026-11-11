@@ -9,6 +9,7 @@ SnakeManager::SnakeManager()
 
     // Initial movement direction
     direction = Direction::Right;
+    movedDirection = Direction::Right;
 }
 
 void SnakeManager::move()
@@ -34,6 +35,7 @@ void SnakeManager::move()
             break;
     }
 
+    movedDirection = direction;
     body.insert(body.begin(), newHead);
 
     // Remove the tail after moving
@@ -54,6 +56,11 @@ void SnakeManager::setDirection(Direction newDirection)
 Direction SnakeManager::getDirection() const
 {
     return direction;
+}
+
+Direction SnakeManager::getMovedDirection() const
+{
+    return movedDirection;
 }
 
 const std::vector<Position>& SnakeManager::getBody() const
