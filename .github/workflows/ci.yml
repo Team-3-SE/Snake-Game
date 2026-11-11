@@ -80,15 +80,15 @@ jobs:
           }
 
           New-Item -ItemType Directory -Force `
-            -Path "build/sprint2-tests/coverage-report" | Out-Null
+            -Path "build/all-tests/coverage-report" | Out-Null
 
           python -m gcovr `
             --root "." `
-            --object-directory "build/sprint2-tests/coverage-data" `
+            --object-directory "build/all-tests/coverage-data" `
             --gcov-executable "gcov" `
             --filter "src/" `
             --txt-summary `
-            --html-details "build/sprint2-tests/coverage-report/index.html"
+            --html-details "build/all-tests/coverage-report/index.html"
 
           if ($LASTEXITCODE -ne 0) {
               throw "Coverage report generation failed."
@@ -99,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: snake-game-console-windows
-          path: build/sprint2-tests/snake_game_console.exe
+          path: build/all-tests/snake_game_console.exe
           if-no-files-found: error
           retention-days: 7
 
@@ -108,7 +108,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: code-and-branch-coverage-report
-          path: build/sprint2-tests/coverage-report/
+          path: build/all-tests/coverage-report/
           if-no-files-found: warn
           retention-days: 7
 
@@ -139,3 +139,4 @@ jobs:
             --std=c++17 \
             -I src \
             src tests
+
