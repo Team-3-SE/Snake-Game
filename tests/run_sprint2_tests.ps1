@@ -1,151 +1,148 @@
 
 $ErrorActionPreference = "Stop"
 
-$RepoRoot = Split-Path -Parent $PSScriptRoot
-$BuildDir = Join-Path $RepoRoot "build\sprint2-tests"
+# Always run from the project root
+$ProjectRoot = Split-Path -Parent $PSScriptRoot
+Set-Location $ProjectRoot
+
+$BuildDir = Join-Path $ProjectRoot "build\all-tests"
 $CoverageDataDir = Join-Path $BuildDir "coverage-data"
 
-New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
+# Check compiler
+if (-not (Get-Command g++ -ErrorAction SilentlyContinue)) {
+    Write-Host "ERROR: g++ not found. Add the MSYS2 UCRT64 compiler to PATH."
+    exit 1
+}
+
+# Start with a clean coverage directory
+if (Test-Path $BuildDir) {
+    Remove-Item $BuildDir -Recurse -Force
+}
+
 New-Item -ItemType Directory -Force -Path $CoverageDataDir | Out-Null
 
-if (-not (Get-Command g++ -ErrorAction SilentlyContinue)) {
-    Write-Host "ERROR: g++ was not found in PATH." -ForegroundColor Red
+# Build the complete application separately
+Write-Host "`n========== BUILDING FULL GAME =========="
+
+$appSources = @(
+    Get-ChildItem (Join-Path $ProjectRoot "src") -Filter "*.cpp" |
+    ForEach-Object { $_.FullName }
+)
+
+$appExe = Join-Path $BuildDir "snake_game_console.exe"
+
+& g++ -std=c++17 -Wall -Wextra -pedantic -O0 -g `
+    -I "src" -o $appExe @appSources
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Full application build failed."
     exit 1
 }
 
-Write-Host "`n====================================="
-Write-Host "       SPRINT 2 TEST RUNNER"
-Write-Host "=====================================`n"
+Write-Host "Full application build: PASS"
 
+# Test names and their required source dependencies
+$tests = @(
+
+    @{ Name = "TC_COLL_01"; Sources = @("src\SnakeManager.cpp", "src\CollisionManager.cpp") }
+    @{ Name = "TC_COLL_02"; Sources = @("src\SnakeManager.cpp", "src\CollisionManager.cpp") }
+
+    @{ Name = "TC_EXIT_01"; Sources = @("src\InputHandler.cpp", "src\SnakeManager.cpp") }
+
+    @{ Name = "TC_FOOD_01"; Sources = @("src\FoodManager.cpp") }
+    @{ Name = "TC_FOOD_02"; Sources = @("src\SnakeManager.cpp", "src\CollisionManager.cpp", "src\FoodManager.cpp") }
+    @{ Name = "TC_FOOD_03"; Sources = @("src\FoodManager.cpp") }
+
+    @{ Name = "TC_GAMEOVER_01"; Sources = @("src\GameStateManager.cpp") }
+    @{ Name = "TC_GROW_01"; Sources = @("src\SnakeManager.cpp") }
+
+    @{ Name = "TC_INPUT_01"; Sources = @("src\InputHandler.cpp", "src\SnakeManager.cpp") }
+
+    @{ Name = "TC_MAINT_01"; Sources = @("src\SnakeManager.cpp", "src\FoodManager.cpp", "src\CollisionManager.cpp", "src\ScoreManager.cpp") }
+
+    @{ Name = "TC_MOVE_01"; Sources = @("src\SnakeManager.cpp") }
+    @{ Name = "TC_MOVE_02"; Sources = @("src\SnakeManager.cpp") }
+    @{ Name = "TC_MOVE_03"; Sources = @("src\SnakeManager.cpp") }
+
+    @{ Name = "TC_PAUSE_01"; Sources = @("src\GameStateManager.cpp") }
+    @{ Name = "TC_PAUSE_02"; Sources = @("src\GameStateManager.cpp") }
+
+    @{ Name = "TC_PERF_01"; Sources = @("src\InputHandler.cpp", "src\SnakeManager.cpp") }
+    @{ Name = "TC_PORT_01"; Sources = @() }
+
+    @{ Name = "TC_REL_01"; Sources = @("src\GameStateManager.cpp") }
+
+    @{ Name = "TC_RESTART_01"; Sources = @("src\GameStateManager.cpp", "src\SnakeManager.cpp", "src\FoodManager.cpp", "src\DifficultyManager.cpp") }
+
+    @{ Name = "TC_SCORE_01"; Sources = @("src\ScoreManager.cpp") }
+    @{ Name = "TC_SCORE_02"; Sources = @("src\ScoreManager.cpp", "src\GameRenderer.cpp") }
+
+    @{ Name = "TC_SEC_05"; Sources = @("src\GameStateManager.cpp", "src\SnakeManager.cpp", "src\FoodManager.cpp") }
+
+    @{ Name = "TC_SPEED_01"; Sources = @("src\DifficultyManager.cpp") }
+
+    @{ Name = "TC_START_01"; Sources = @("src\GameStateManager.cpp") }
+    @{ Name = "TC_STATE_01"; Sources = @("src\GameStateManager.cpp") }
+
+    @{ Name = "TC_STATE_RENDER_01"; Sources = @("src\GameRenderer.cpp") }
+    @{ Name = "TC_UX_01"; Sources = @("src\GameRenderer.cpp") }
+)
+
+$total = $tests.Count
 $passed = 0
-$total = 5
+$failed = 0
 
-try {
-    # Build the complete console application.
-    Write-Host "[BUILD] Full console application"
+Write-Host "`n========== RUNNING $total AUTOMATED TESTS =========="
 
-    $mainSources = @(
-        Get-ChildItem -Path (Join-Path $RepoRoot "src") `
-            -Filter "*.cpp" -File |
-        Sort-Object Name |
-        ForEach-Object { $_.FullName }
-    )
+foreach ($test in $tests) {
 
-    $mainExe = Join-Path $BuildDir "snake_game_console.exe"
+    Write-Host "`n---------- $($test.Name) ----------"
 
-    $mainArgs = @(
-        "-std=c++17",
-        "-Wall",
-        "-Wextra",
-        "-pedantic",
-        "-DCONSOLE_MODE"
-    ) + $mainSources + @("-o", $mainExe)
+    $testDir = Join-Path $CoverageDataDir $test.Name
+    New-Item -ItemType Directory -Force -Path $testDir | Out-Null
 
-    & g++ @mainArgs
+    $testFile = Join-Path $ProjectRoot "tests\$($test.Name).cpp"
+    $exe = Join-Path $testDir "$($test.Name).exe"
+
+    $compileFiles = @($testFile)
+
+    foreach ($source in $test.Sources) {
+        $compileFiles += Join-Path $ProjectRoot $source
+    }
+
+    # Compile with coverage instrumentation
+    & g++ -std=c++17 -Wall -Wextra -pedantic -O0 -g --coverage `
+        -I "src" -o $exe @compileFiles
 
     if ($LASTEXITCODE -ne 0) {
-        throw "Main application compilation failed."
+        Write-Host "$($test.Name): COMPILE FAILED"
+        $failed++
+        continue
     }
 
-    Write-Host "[PASS] Main application build" -ForegroundColor Green
-    $passed++
+    # Execute the test
+    & $exe
 
-    # Sprint 2 automated test definitions.
-    $tests = @(
-        [PSCustomObject]@{
-            Name = "TC_PAUSE_01"
-            Sources = @("src\GameStateManager.cpp")
-        }
-
-        [PSCustomObject]@{
-            Name = "TC_PAUSE_02"
-            Sources = @("src\GameStateManager.cpp")
-        }
-
-        [PSCustomObject]@{
-            Name = "TC_RESTART_01"
-            Sources = @(
-                "src\GameStateManager.cpp",
-                "src\SnakeManager.cpp",
-                "src\FoodManager.cpp",
-                "src\DifficultyManager.cpp"
-            )
-        }
-
-        [PSCustomObject]@{
-            Name = "TC_EXIT_01"
-            Sources = @(
-                "src\InputHandler.cpp",
-                "src\SnakeManager.cpp"
-            )
-        }
-    )
-
-    foreach ($test in $tests) {
-        Write-Host "`n[TEST] $($test.Name)"
-
-        $testSource = Join-Path $RepoRoot "tests\$($test.Name).cpp"
-
-        if (-not (Test-Path $testSource)) {
-            throw "Test source not found: $testSource"
-        }
-
-        # Keep each test's coverage files separate.
-        $testBuildDir = Join-Path $CoverageDataDir $test.Name
-        New-Item -ItemType Directory -Force -Path $testBuildDir | Out-Null
-
-        $exePath = Join-Path $testBuildDir "$($test.Name).exe"
-
-        $dependencyPaths = @(
-            $test.Sources |
-            ForEach-Object { Join-Path $RepoRoot $_ }
-        )
-
-        $compileArgs = @(
-            "-std=c++17",
-            "-Wall",
-            "-Wextra",
-            "-pedantic",
-            "-O0",
-            "-g",
-            "--coverage"
-        ) + @($testSource) + $dependencyPaths +
-            @("-o", $exePath)
-
-        Push-Location $testBuildDir
-        try {
-            & g++ @compileArgs
-
-            if ($LASTEXITCODE -ne 0) {
-                throw "$($test.Name) compilation failed."
-            }
-
-            & $exePath
-
-            if ($LASTEXITCODE -ne 0) {
-                throw "$($test.Name) execution failed."
-            }
-        }
-        finally {
-            Pop-Location
-        }
-
-        Write-Host "[PASS] $($test.Name)" -ForegroundColor Green
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "$($test.Name): PASS"
         $passed++
     }
-
-    Write-Host "`n====================================="
-    Write-Host "Sprint 2 Results: $passed / $total passed"
-    Write-Host "====================================="
-
-    if ($passed -ne $total) {
-        exit 1
+    else {
+        Write-Host "$($test.Name): TEST FAILED"
+        $failed++
     }
-
-    exit 0
 }
-catch {
-    Write-Host "`n[FAIL] $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "Sprint 2 test runner stopped."
+
+Write-Host "`n======================================"
+Write-Host "AUTOMATED TEST RESULTS"
+Write-Host "Passed : $passed"
+Write-Host "Failed : $failed"
+Write-Host "Total  : $total"
+Write-Host "======================================"
+
+if ($failed -gt 0) {
     exit 1
 }
+
+Write-Host "`nAll automated tests passed."
+exit 0
