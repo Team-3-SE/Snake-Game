@@ -79,16 +79,35 @@ jobs:
               throw "GCOV is not working."
           }
 
-          New-Item -ItemType Directory -Force `
-            -Path "build/all-tests/coverage-report" | Out-Null
+          $coverageDataPath = Join-Path $PWD "build\all-tests\coverage-data"
+          $coverageReportPath = Join-Path $PWD "build\all-tests\coverage-report"
+
+          Write-Host "Coverage data path: $coverageDataPath"
+          Write-Host "Coverage report path: $coverageReportPath"
+
+          if (-not (Test-Path -LiteralPath $coverageDataPath -PathType Container)) {
+              throw "Coverage data directory does not exist: $coverageDataPath"
+          }
+
+          Write-Host "Checking generated coverage files..."
+
+          $gcdaFiles = @(Get-ChildItem $coverageDataPath -Recurse -Filter "*.gcda")
+
+          Write-Host "GCDA files found: $($gcdaFiles.Count)"
+
+          if ($gcdaFiles.Count -eq 0) {
+              throw "No GCDA coverage files were generated."
+          }
+
+          New-Item -ItemType Directory -Force -Path $coverageReportPath | Out-Null
 
           python -m gcovr `
-            --root "." `
-            --object-directory "build/all-tests/coverage-data" `
-            --gcov-executable "gcov" `
+            --root "$PWD" `
+            --object-directory "$coverageDataPath" `
+            --gcov-executable "$gcovPath" `
             --filter "src/" `
             --txt-summary `
-            --html-details "build/all-tests/coverage-report/index.html"
+            --html-details "$coverageReportPath/index.html"
 
           if ($LASTEXITCODE -ne 0) {
               throw "Coverage report generation failed."
@@ -139,4 +158,3 @@ jobs:
             --std=c++17 \
             -I src \
             src tests
-
