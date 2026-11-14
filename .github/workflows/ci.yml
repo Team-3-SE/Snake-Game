@@ -129,7 +129,7 @@ jobs:
           python -m gcovr `
             --root "$projectPath" `
             --gcov-executable "gcov" `
-            --filter "$projectPath/src/" `
+            --filter '.*[\\/]src[\\/].*' `
             --txt-summary `
             --html-details "$coverageReportPath/index.html"
 
