@@ -9,7 +9,7 @@ class GameController
 {
 private:
     GameStateManager stateManager;
-    bool running;
+
 
 public:
     GameController();

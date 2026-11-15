@@ -71,6 +71,7 @@ namespace
             case GameState::Playing:  return RenderGameState::Playing;
             case GameState::Paused:   return RenderGameState::Paused;
             case GameState::GameOver: return RenderGameState::GameOver;
+            case GameState::Exiting: break;
         }
         return RenderGameState::Menu;
     }
@@ -149,10 +150,7 @@ namespace
     }
 }
 
-GameController::GameController()
-    : running(true)
-{
-}
+GameController::GameController() = default;
 
 void GameController::run()
 {
@@ -165,7 +163,7 @@ void GameController::run()
     auto lastTick = std::chrono::steady_clock::now();
     bool firstFrame = true;
 
-    while (running)
+    while (stateManager.getState() != GameState::Exiting)
     {
         GameState state = stateManager.getState();
 
@@ -178,7 +176,10 @@ void GameController::run()
             int key = _getch();
 
             if (key == 27)
-                running = false;
+            {
+                stateManager.setState(GameState::Exiting);
+
+            }
             else if (key == 13)
             {
                 stateManager.setState(GameState::Playing);
@@ -198,7 +199,10 @@ void GameController::run()
             int key = _getch();
 
             if (key == 27)
-                running = false;
+            {
+                stateManager.setState(GameState::Exiting);
+
+            }
             else if (key == 'r' || key == 'R')
             {
                 snake = SnakeManager();
@@ -221,7 +225,10 @@ void GameController::run()
             int key = _getch();
 
             if (key == 27)
-                running = false;
+            {
+                stateManager.setState(GameState::Exiting);
+
+            }
             else if (key == 'p' || key == 'P')
             {
                 stateManager.setState(GameState::Playing);
@@ -243,7 +250,8 @@ void GameController::run()
 
             if (command == InputCommand::Exit)
             {
-                running = false;
+                stateManager.setState(GameState::Exiting);
+
                 break;
             }
 
@@ -257,7 +265,7 @@ void GameController::run()
                 InputHandler::applyDirection(snake, toDirection(command));
         }
 
-        if (!running)
+        if (stateManager.getState() == GameState::Exiting)
             break;
 
         if (!stateManager.isGameplayActive())

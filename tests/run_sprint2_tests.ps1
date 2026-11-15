@@ -1,4 +1,3 @@
-
 $ErrorActionPreference = "Stop"
 
 # Always run from the project root
@@ -41,51 +40,39 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "Full application build: PASS"
 
-# Test names and their required source dependencies
+# All automated test names and their source dependencies
 $tests = @(
-
     @{ Name = "TC_COLL_01"; Sources = @("src\SnakeManager.cpp", "src\CollisionManager.cpp") }
     @{ Name = "TC_COLL_02"; Sources = @("src\SnakeManager.cpp", "src\CollisionManager.cpp") }
-
     @{ Name = "TC_EXIT_01"; Sources = @("src\InputHandler.cpp", "src\SnakeManager.cpp") }
-
     @{ Name = "TC_FOOD_01"; Sources = @("src\FoodManager.cpp") }
     @{ Name = "TC_FOOD_02"; Sources = @("src\SnakeManager.cpp", "src\CollisionManager.cpp", "src\FoodManager.cpp") }
     @{ Name = "TC_FOOD_03"; Sources = @("src\FoodManager.cpp") }
-
     @{ Name = "TC_GAMEOVER_01"; Sources = @("src\GameStateManager.cpp") }
     @{ Name = "TC_GROW_01"; Sources = @("src\SnakeManager.cpp") }
-
     @{ Name = "TC_INPUT_01"; Sources = @("src\InputHandler.cpp", "src\SnakeManager.cpp") }
-
     @{ Name = "TC_MAINT_01"; Sources = @("src\SnakeManager.cpp", "src\FoodManager.cpp", "src\CollisionManager.cpp", "src\ScoreManager.cpp") }
-
     @{ Name = "TC_MOVE_01"; Sources = @("src\SnakeManager.cpp") }
     @{ Name = "TC_MOVE_02"; Sources = @("src\SnakeManager.cpp") }
     @{ Name = "TC_MOVE_03"; Sources = @("src\SnakeManager.cpp") }
-
     @{ Name = "TC_PAUSE_01"; Sources = @("src\GameStateManager.cpp") }
     @{ Name = "TC_PAUSE_02"; Sources = @("src\GameStateManager.cpp") }
-
     @{ Name = "TC_PERF_01"; Sources = @("src\InputHandler.cpp", "src\SnakeManager.cpp") }
     @{ Name = "TC_PORT_01"; Sources = @() }
-
     @{ Name = "TC_REL_01"; Sources = @("src\GameStateManager.cpp") }
-
     @{ Name = "TC_RESTART_01"; Sources = @("src\GameStateManager.cpp", "src\SnakeManager.cpp", "src\FoodManager.cpp", "src\DifficultyManager.cpp") }
-
     @{ Name = "TC_SCORE_01"; Sources = @("src\ScoreManager.cpp") }
     @{ Name = "TC_SCORE_02"; Sources = @("src\ScoreManager.cpp", "src\GameRenderer.cpp") }
-
     @{ Name = "TC_SEC_05"; Sources = @("src\GameStateManager.cpp", "src\SnakeManager.cpp", "src\FoodManager.cpp") }
-
     @{ Name = "TC_SPEED_01"; Sources = @("src\DifficultyManager.cpp") }
-
     @{ Name = "TC_START_01"; Sources = @("src\GameStateManager.cpp") }
     @{ Name = "TC_STATE_01"; Sources = @("src\GameStateManager.cpp") }
-
     @{ Name = "TC_STATE_RENDER_01"; Sources = @("src\GameRenderer.cpp") }
     @{ Name = "TC_UX_01"; Sources = @("src\GameRenderer.cpp") }
+
+    # Two new tests received from main
+    @{ Name = "TC_STATE_EXIT_01"; Sources = @("src\GameStateManager.cpp") }
+    @{ Name = "TC_STATE_TRANSITION_01"; Sources = @("src\GameStateManager.cpp") }
 )
 
 $total = $tests.Count
@@ -102,6 +89,13 @@ foreach ($test in $tests) {
     New-Item -ItemType Directory -Force -Path $testDir | Out-Null
 
     $testFile = Join-Path $ProjectRoot "tests\$($test.Name).cpp"
+
+    if (-not (Test-Path $testFile)) {
+        Write-Host "$($test.Name): TEST SOURCE NOT FOUND"
+        $failed++
+        continue
+    }
+
     $exe = Join-Path $testDir "$($test.Name).exe"
 
     $compileFiles = @($testFile)
