@@ -21,7 +21,10 @@ int main()
 
     const Position foodAtNewHead = {6, 5};
     assert(CollisionManager::checkFoodCollision(snake, foodAtNewHead));
-
+    // Same X coordinate but different Y coordinate.
+    const Position foodSameXDifferentY = {6, 6};
+    assert(!CollisionManager::checkFoodCollision(
+     snake, foodSameXDifferentY));
     // Test that food generation fails when the board is full.
     FoodManager foodManager(2, 2);
 

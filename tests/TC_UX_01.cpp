@@ -1,3 +1,4 @@
+
 #include "../src/GameRenderer.h"
 
 #include <cassert>
@@ -29,21 +30,33 @@ int main()
         const std::string status =
             GameRenderer::buildStatus(testCase.state, 12);
 
-        // SG-F-017: state is clearly named and shown in the status display.
         assert(name == testCase.stateLabel);
         assert(status.find(std::string("Game State: ") + testCase.stateLabel)
                != std::string::npos);
 
-        // SGNF-003: state-specific controls are readable and not empty.
         assert(!controls.empty());
         assert(controls == testCase.expectedControls);
         assert(status.find(std::string("Controls: ") + testCase.expectedControls)
                != std::string::npos);
 
-        // UX information includes score and game title.
         assert(status.find("SNAKE GAME") != std::string::npos);
         assert(status.find("Score: 12") != std::string::npos);
     }
+
+    // Test invalid game-state fallback behaviour.
+    const RenderGameState invalidState =
+        static_cast<RenderGameState>(-1);
+
+    assert(GameRenderer::stateName(invalidState) == "UNKNOWN");
+
+    assert(GameRenderer::controlsFor(invalidState).empty());
+
+    const std::string invalidStatus =
+        GameRenderer::buildStatus(invalidState, 25);
+
+    assert(invalidStatus.find("Game State: UNKNOWN") != std::string::npos);
+    assert(invalidStatus.find("Score: 25") != std::string::npos);
+    assert(invalidStatus.find("Controls: \n") != std::string::npos);
 
     return 0;
 }
