@@ -1,6 +1,6 @@
 # Snake Game — SE Mini Project
 
-A single-player, standalone desktop Snake Game implemented in C/C++, using SFML for rendering with a console-based build as a fallback interface.
+A single-player, standalone desktop Snake Game implemented in C/C++, as a Windows console application.
 
 This repository implements the requirements defined in the team's Software Requirements Specification (SRS). Every module below traces back to the SRS's functional requirements (`SG-F-###`), non-functional requirements (`SGNF-###`), and security requirements (`SG-SR-###`).
 
@@ -27,12 +27,10 @@ These are locked project decisions and should not be changed without team agreem
 
 ## Build
 
-```bash
-# SFML build
-g++ -std=c++17 src/*.cpp -o snake_game -lsfml-graphics -lsfml-window -lsfml-system
+The game is console-only and Windows-only (`<conio.h>`, `<windows.h>`); no SFML is used.
 
-# Console-only build
-g++ -std=c++17 -DCONSOLE_MODE src/*.cpp -o snake_game_console
+```bash
+g++ -std=c++17 src/*.cpp -o snake_game
 ```
 
 ## Project Structure
@@ -64,6 +62,10 @@ snake-game-se-project/
 │   ├── TC_STATE_01.cpp
 │   ├── TC_PERF_01.cpp / TC_REL_01.cpp / TC_UX_01.cpp / TC_PORT_01.cpp / TC_MAINT_01.cpp
 │   └── TC_SEC_01.cpp ... TC_SEC_05.cpp
+├── system_harness/                    # System tests: real GameController + stub conio/windows (Linux/macOS/WSL)
+│   ├── harness.cpp, shim.h, conio.h, windows.h
+│   ├── run_system_tests.py
+│   ├── UNIT_TESTS.md, CODE_COVERAGE.md, BRANCH_COVERAGE.md
 ├── docs/
 │   └── SRS/                           # Final SRS document(s)
 ├── .gitignore
@@ -87,3 +89,60 @@ Test file names follow the SRS's naming convention, `TC-[FUNCTION]-[NUMBER]`, so
 These do not need to be individual C++ classes if a simpler structure is more practical:
 
 Game Controller · Input Handler · Snake Manager · Food Manager · Collision Manager · Score Manager · Game Renderer · Game State Manager · Difficulty Manager
+
+## Game State Lifecycle
+
+The GameStateManager controls the lifecycle of the Snake Game and validates state transitions.
+
+### Available States
+
+| State | Description |
+|---|---|
+| Menu | Initial state displayed when the game starts. |
+| Playing | Active gameplay; snake movement and updates are enabled. |
+| Paused | Gameplay updates are suspended until resumed. |
+| GameOver | Displayed when a game-ending condition occurs. |
+| Exiting | Terminal state indicating that the player has requested to exit. |
+
+### Valid State Transitions
+
+- Menu -> Playing: Player starts the game.
+- Playing -> Paused: Player presses P.
+- Paused -> Playing: Player resumes using P.
+- Playing -> GameOver: A game-ending condition occurs.
+- GameOver -> Playing: Player restarts using R.
+- Any non-exiting state -> Exiting: Player presses Escape.
+
+The Exiting state is terminal. No further transitions are accepted after entering it.
+
+### Gameplay and Exit Handling
+
+The isGameplayActive() method returns true only when the current state is Playing.
+
+GameController uses GameStateManager as the single source of truth for controlling the game loop. The loop terminates when the state becomes Exiting, without requiring a separate running Boolean.
+
+Escape is handled through the state manager from the main menu, active gameplay, pause screen, and Game Over screen.
+
+### State Management Tests
+
+| Test | Purpose |
+|---|---|
+| TC_PAUSE_01 | Pause, resume, and active gameplay state. |
+| TC_PAUSE_02 | Invalid state transitions. |
+| TC_RESTART_01 | Game restart behaviour. |
+| TC_EXIT_01 | Escape key input mapping. |
+| TC_STATE_EXIT_01 | Exit from all non-terminal states and terminal-state behaviour. |
+| TC_STATE_TRANSITION_01 | Transition validation without modifying the current state. |
+
+Run the Sprint 2 build and automated tests on Windows using:
+
+    .\tests\run_sprint2_tests.ps1
+
+
+## System Tests and Coverage
+
+Drives the real `GameController` with scripted keys (Linux / macOS / WSL):
+
+    python3 system_harness/run_system_tests.py . [--coverage]
+
+ST-10 (two turns in one tick reverses the snake, SG-F-004) is a reported known failure. See `system_harness/CODE_COVERAGE.md`, `BRANCH_COVERAGE.md` and `UNIT_TESTS.md` for results.
