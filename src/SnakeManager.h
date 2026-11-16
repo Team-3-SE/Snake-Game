@@ -22,6 +22,7 @@ class SnakeManager
 private:
     std::vector<Position> body;
     Direction direction;
+    Direction movedDirection;
 
 public:
     SnakeManager();
@@ -31,6 +32,8 @@ public:
 
     void setDirection(Direction newDirection);
     Direction getDirection() const;
+    // Direction used by the most recent move(); input is validated against it.
+    Direction getMovedDirection() const;
 
     const std::vector<Position>& getBody() const;
     Position getHead() const;

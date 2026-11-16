@@ -1,6 +1,6 @@
 # Snake Game — SE Mini Project
 
-A single-player, standalone desktop Snake Game implemented in C/C++, using SFML for rendering with a console-based build as a fallback interface.
+A single-player, standalone desktop Snake Game implemented in C/C++, as a Windows console application.
 
 This repository implements the requirements defined in the team's Software Requirements Specification (SRS). Every module below traces back to the SRS's functional requirements (`SG-F-###`), non-functional requirements (`SGNF-###`), and security requirements (`SG-SR-###`).
 
@@ -27,12 +27,10 @@ These are locked project decisions and should not be changed without team agreem
 
 ## Build
 
-```bash
-# SFML build
-g++ -std=c++17 src/*.cpp -o snake_game -lsfml-graphics -lsfml-window -lsfml-system
+The game is console-only and Windows-only (`<conio.h>`, `<windows.h>`); no SFML is used.
 
-# Console-only build
-g++ -std=c++17 -DCONSOLE_MODE src/*.cpp -o snake_game_console
+```bash
+g++ -std=c++17 src/*.cpp -o snake_game
 ```
 
 ## Project Structure
@@ -64,6 +62,10 @@ snake-game-se-project/
 │   ├── TC_STATE_01.cpp
 │   ├── TC_PERF_01.cpp / TC_REL_01.cpp / TC_UX_01.cpp / TC_PORT_01.cpp / TC_MAINT_01.cpp
 │   └── TC_SEC_01.cpp ... TC_SEC_05.cpp
+├── system_harness/                    # System tests: real GameController + stub conio/windows (Linux/macOS/WSL)
+│   ├── harness.cpp, shim.h, conio.h, windows.h
+│   ├── run_system_tests.py
+│   ├── UNIT_TESTS.md, CODE_COVERAGE.md, BRANCH_COVERAGE.md
 ├── docs/
 │   └── SRS/                           # Final SRS document(s)
 ├── .gitignore
