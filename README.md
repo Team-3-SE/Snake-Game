@@ -137,12 +137,3 @@ Escape is handled through the state manager from the main menu, active gameplay,
 Run the Sprint 2 build and automated tests on Windows using:
 
     .\tests\run_sprint2_tests.ps1
-
-
-## System Tests and Coverage
-
-Drives the real `GameController` with scripted keys (Linux / macOS / WSL):
-
-    python3 system_harness/run_system_tests.py . [--coverage]
-
-ST-10 (two turns in one tick reverses the snake, SG-F-004) is a reported known failure. See `system_harness/CODE_COVERAGE.md`, `BRANCH_COVERAGE.md` and `UNIT_TESTS.md` for results.

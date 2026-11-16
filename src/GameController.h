@@ -5,6 +5,10 @@
 
 class GameController
 {
+private:
+    GameStateManager stateManager;
+
+
 public:
     GameController();
 

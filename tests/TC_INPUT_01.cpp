@@ -89,5 +89,21 @@ int main()
     assert(InputHandler::parseInput('p') == InputCommand::Pause);
     assert(InputHandler::parseInput('r') == InputCommand::Restart);
     assert(InputHandler::parseInput(static_cast<char>(27)) == InputCommand::Exit);
+    // Test invalid direction enum fallback.
+    const Direction invalidDirection =
+        static_cast<Direction>(-1);
+
+    assert(!InputHandler::isValidDirection(
+        invalidDirection, Direction::Up));
+
+    // Applying a direction to a snake with an invalid
+    // current direction must be rejected.
+    SnakeManager invalidSnake;
+    invalidSnake.setDirection(invalidDirection);
+
+    assert(!InputHandler::applyDirection(
+        invalidSnake, Direction::Up));
+
+    assert(invalidSnake.getDirection() == invalidDirection);
     return 0;
 }

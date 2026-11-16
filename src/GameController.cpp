@@ -116,20 +116,47 @@ void GameController::run()
     bool needsRedraw = true;
     GameState shown = session.getState();
 
-    while (session.getState() != GameState::Exiting)
+    while (stateManager.getState() != GameState::Exiting)
     {
         const GameState state = session.getState();
 
         if (state != shown)
         {
-            shown = state;
-            lastTick = std::chrono::steady_clock::now();
-            needsRedraw = true;
+            system("cls");
+            GameRenderer::renderConsole(RenderGameState::Menu, score);
+            std::cout << "\nPress ENTER to start or ESC to exit.\n";
+
+            int key = _getch();
+
+            if (key == 27)
+            {
+                stateManager.setState(GameState::Exiting);
+
+            }
+            else if (key == 13)
+            {
+                stateManager.setState(GameState::Playing);
+                lastTick = std::chrono::steady_clock::now();
+                firstFrame = true;
+            }
+            continue;
         }
 
         if (state != GameState::Playing)
         {
-            if (needsRedraw)
+            system("cls");
+            GameRenderer::renderConsole(RenderGameState::GameOver, score);
+            std::cout << "\nFinal score: " << score
+                      << "\nPress R to restart or ESC to exit.\n";
+
+            int key = _getch();
+
+            if (key == 27)
+            {
+                stateManager.setState(GameState::Exiting);
+
+            }
+            else if (key == 'r' || key == 'R')
             {
                 system("cls");
                 GameRenderer::renderConsole(toRenderState(state),
@@ -144,11 +171,17 @@ void GameController::run()
                 needsRedraw = false;
             }
 
-            const int key = _getch();
-            if (state == GameState::Menu && key == 13)
-                session.start();
-            else
-                session.handle(readCommand(key));
+            if (key == 27)
+            {
+                stateManager.setState(GameState::Exiting);
+
+            }
+            else if (key == 'p' || key == 'P')
+            {
+                stateManager.setState(GameState::Playing);
+                lastTick = std::chrono::steady_clock::now();
+                firstFrame = true;
+            }
             continue;
         }
 
@@ -158,10 +191,31 @@ void GameController::run()
             needsRedraw = false;
         }
 
-        while (_kbhit() && session.getState() == GameState::Playing)
-            session.handle(readCommand(_getch()));
+        while (_kbhit())
+        {
+            InputCommand command = readArrowOrKey();
 
-        if (session.getState() != GameState::Playing)
+            if (command == InputCommand::Exit)
+            {
+                stateManager.setState(GameState::Exiting);
+
+                break;
+            }
+
+            if (command == InputCommand::Pause)
+            {
+                stateManager.setState(GameState::Paused);
+                break;
+            }
+
+            if (isMove(command))
+                InputHandler::applyDirection(snake, toDirection(command));
+        }
+
+        if (stateManager.getState() == GameState::Exiting)
+            break;
+
+        if (!stateManager.isGameplayActive())
             continue;
 
         const auto elapsed =
